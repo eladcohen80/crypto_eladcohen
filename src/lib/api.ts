@@ -1,6 +1,14 @@
 function normalizeApiBaseUrl(value: string | undefined, fallback: string): string {
   const resolvedValue = value?.trim() || fallback;
-  return resolvedValue.replace(/\/$/, '');
+  const normalizedValue = resolvedValue.replace(/\/$/, '');
+
+  // Vite's /api proxy exists only in local dev. In production, a relative /api base
+  // would hit the hosting app itself and return 404 unless a real backend route exists.
+  if (!import.meta.env.DEV && normalizedValue.startsWith('/')) {
+    return fallback;
+  }
+
+  return normalizedValue;
 }
 
 const defaultCoinGeckoApiBase = import.meta.env.DEV

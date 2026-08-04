@@ -12,7 +12,7 @@ type GeminiModelInfo = {
 };
 
 type GeminiModelsResponse = {
-  models?: GeminiModelInfo[];t
+  models?: GeminiModelInfo[];
 };
 
 export default function AIRecomendationPage() {
