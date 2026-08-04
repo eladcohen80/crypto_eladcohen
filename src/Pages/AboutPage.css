@@ -1,0 +1,10 @@
+.about-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px;
+  text-align: left;
+}
+
+.about-page p {
+  line-height: 1.6;
+}
