@@ -6,14 +6,7 @@ import type { AppDispatch, RootState } from '../store/store';
 import SelectedCoins from '../Components/SelectedCoins';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-type GeminiModelInfo = {
-  name: string;
-  supportedGenerationMethods?: string[];
-};
-
-type GeminiModelsResponse = {
-  models?: GeminiModelInfo[];
-};
+const GEMINI_CANDIDATE_MODELS = ['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-1.5-pro'];
 
 export default function AIRecomendationPage() {
   const dispatch = useDispatch<AppDispatch>();
@@ -70,33 +63,10 @@ export default function AIRecomendationPage() {
       ].join('\n');
 
       const genAI = new GoogleGenerativeAI(apiKey);
-      const modelsResponse = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}`,
-      );
-
-      if (!modelsResponse.ok) {
-        throw new Error(`Failed to list Gemini models. HTTP ${modelsResponse.status}`);
-      }
-
-      const modelsData = (await modelsResponse.json()) as GeminiModelsResponse;
-      const availableGenerateModels = (modelsData.models ?? [])
-        .filter((modelInfo) => modelInfo.supportedGenerationMethods?.includes('generateContent'))
-        .map((modelInfo) => modelInfo.name.replace(/^models\//, ''));
-
-      const preferredOrder = ['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-1.5-pro'];
-      const candidateModels = [
-        ...preferredOrder.filter((name) => availableGenerateModels.includes(name)),
-        ...availableGenerateModels.filter((name) => !preferredOrder.includes(name)),
-      ];
-
-      if (candidateModels.length === 0) {
-        throw new Error('No Gemini model with generateContent support was found for this API key.');
-      }
-
       let generatedText = '';
       let lastModelError: unknown;
 
-      for (const modelName of candidateModels) {
+      for (const modelName of GEMINI_CANDIDATE_MODELS) {
         try {
           const model = genAI.getGenerativeModel({ model: modelName });
           const result = await model.generateContent(prompt);
@@ -108,6 +78,11 @@ export default function AIRecomendationPage() {
       }
 
       if (!generatedText) {
+        const message = lastModelError instanceof Error ? lastModelError.message : '';
+        if (message.includes('401') || message.toLowerCase().includes('api key')) {
+          throw new Error('Gemini API key is invalid, missing, or not enabled for the Generative Language API.');
+        }
+
         throw lastModelError ?? new Error('Failed to generate recommendation.');
       }
 
