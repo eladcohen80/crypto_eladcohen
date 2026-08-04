@@ -49,9 +49,15 @@ export const fetchReportDataForSelectedCoins = createAsyncThunk(
         const symbols = selectedSymbols.map((symbol) => symbol.toUpperCase()).join(',');
         const apiKey = import.meta.env.VITE_CRYPTOCOMPARE_API_KEY;
         const apiKeyQuery = apiKey ? `&api_key=${encodeURIComponent(apiKey)}` : '';
-        const response = await fetch(
-            `${cryptoCompareApiBase}/data/pricemulti?tsyms=usd&fsyms=${encodeURIComponent(symbols)}${apiKeyQuery}`,
-        );
+        let response: Response;
+
+        try {
+            response = await fetch(
+                `${cryptoCompareApiBase}/data/pricemulti?tsyms=usd&fsyms=${encodeURIComponent(symbols)}${apiKeyQuery}`,
+            );
+        } catch {
+            return fetchFromCoinGecko(symbols);
+        }
 
         if (!response.ok) {
             if (response.status === 401) {
